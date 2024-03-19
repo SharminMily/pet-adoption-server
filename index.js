@@ -86,6 +86,13 @@ async function run() {
       res.send(result);
     })
 
+    app.get('/users', async(req,res) => {
+      // const email = req.query.email;
+      // const query = {email: email}
+      const result = await userCollection.find().toArray();
+      res.send(result);
+    })
+
     // console.log(result)
 
     // carts collection 2nd step
