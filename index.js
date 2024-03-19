@@ -37,6 +37,7 @@ async function run() {
     const petsCollection = client.db('petsAdoption').collection('allPets');
     const donationsCollection = client.db('petsAdoption').collection('donations');
     const userCollection = client.db("petsAdoption").collection("users");
+    const cartCollection = client.db("petsAdoption").collection("carts");
 
 
     // All data
@@ -45,6 +46,14 @@ async function run() {
         const result = await cursor.toArray();
         res.send(result);
     })
+
+    // id
+    app.get("/allPets/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)}
+      const result = await petsCollection.findOne(query);
+      res.send(result)
+  })
 
     // donations
     app.get('/donations', async(req, res) => {
@@ -77,7 +86,32 @@ async function run() {
       res.send(result);
     })
 
-    console.log(result)
+    // console.log(result)
+
+    // carts collection 2nd step
+    app.get('/carts', async(req,res) => {
+      const email = req.query.email;
+      const query = {email: email}
+      const result = await cartCollection.find(query).toArray();
+      res.send(result);
+    })
+    // delete
+    app.delete('/carts/:id', async(req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)}
+      const result = await cartCollection.deleteOne(query);
+      res.send(result)
+    })
+
+    // carts collection 1
+    app.post('/carts' , async(req, res) => {
+      const cartItems  = req.body;
+      const result = await cartCollection.insertOne(cartItems);
+      res.send(result);
+    });
+    
+
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
