@@ -53,7 +53,7 @@ async function run() {
 
     // middlewares verify
     const verifyToken = (req, res, next) => {
-      console.log("inside varify token", req.headers.authorization);
+      // console.log("inside varify token", req.headers.authorization);
       if (!req.headers.authorization) {
         return res.status(401).send({ message: "unauthorized access" });
       }
@@ -68,18 +68,17 @@ async function run() {
       // next();
     };
     //  admin verify
-     // use verify admin after token
-     const verifyAdmin = async( req, res, next) => {
+    // use verify admin after token
+    const verifyAdmin = async (req, res, next) => {
       const email = req.decoded.email;
-      const query = {email: email};
+      const query = { email: email };
       const user = await userCollection.findOne(query);
-      const isAdmin = user?.role === 'admin';
-      if(!isAdmin){
-       return res.status(403).send({message: 'forbidden access'})
+      const isAdmin = user?.role === "admin";
+      if (!isAdmin) {
+        return res.status(403).send({ message: "forbidden access" });
       }
       next();
-   }
-
+    };
 
     // Users
     app.get("/users", verifyToken, verifyAdmin, async (req, res) => {
@@ -106,7 +105,7 @@ async function run() {
     });
 
     app.post("/users", async (req, res) => {
-      console.log(req.headers);
+      // console.log(req.headers);
       const user = req.body;
       // 1.email unique, 2.upsert,  3. simple
       const query = { email: user.email };
@@ -119,17 +118,22 @@ async function run() {
     });
 
     // make admin
-    app.patch("/users/admin/:id",verifyToken, verifyAdmin, async (req, res) => {
-      const id = req.params.id;
-      const filter = { _id: new ObjectId(id) };
-      const updateDoc = {
-        $set: {
-          role: "admin",
-        },
-      };
-      const result = await userCollection.updateOne(filter, updateDoc);
-      res.send(result);
-    });
+    app.patch(
+      "/users/admin/:id",
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        const id = req.params.id;
+        const filter = { _id: new ObjectId(id) };
+        const updateDoc = {
+          $set: {
+            role: "admin",
+          },
+        };
+        const result = await userCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      }
+    );
 
     // delete
     app.delete("/users/:id", verifyToken, verifyAdmin, async (req, res) => {
@@ -148,11 +152,52 @@ async function run() {
       res.send(result);
     });
 
+    // update
+    app.get("allPets/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await petsCollection.findOne(query);
+      res.send(result);
+    });
     // id
     app.get("/allPets/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await petsCollection.findOne(query);
+      res.send(result);
+    });
+
+    // update patch
+    app.patch("/allPets/:id", async (req, res) => {
+      const pet = req.body;
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          petName: pet.petName,
+          petAge: pet.petAge,
+          petLocation: pet.petLocation,
+          description: pet.description,
+          category: pet.category,
+          petImage: pet.petImage,
+        },
+      };
+      const result = await petsCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+
+    // add kora post
+    app.post("/allPets", async (req, res) => {
+      const pet = req.body;
+      const result = await petsCollection.insertOne(pet);
+      res.send(result);
+    });
+
+    // delete
+    app.delete("/allPets/:id", verifyToken, verifyAdmin, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await petsCollection.deleteOne(query);
       res.send(result);
     });
 
