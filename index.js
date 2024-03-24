@@ -276,6 +276,17 @@ async function run() {
       })
     })
  
+       // user
+       app.get('/user-stats', async(req, res) => {
+        const cart = await cartCollection.estimatedDocumentCount();
+        const myDonation = await myDonationsCollection.estimatedDocumentCount();
+        // 
+        res.send({
+         cart,
+         myDonation
+        })
+      })
+  
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
