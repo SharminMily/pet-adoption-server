@@ -40,6 +40,7 @@ async function run() {
       .collection("donations");
     const userCollection = client.db("petsAdoption").collection("users");
     const cartCollection = client.db("petsAdoption").collection("carts");
+    const myDonationsCollection = client.db("petsAdoption").collection("myDonations");
 
     // jwt related api
     app.post("/jwt", async (req, res) => {
@@ -208,14 +209,36 @@ async function run() {
       res.send(result);
     });
 
-    // id
 
+    // id
     app.get("/donations/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await donationsCollection.findOne(query);
       res.send(result);
     });
+
+    //  my donation
+    app.post("/myDonations", async (req, res) => {
+      const donationsItems = req.body;
+      const result = await myDonationsCollection.insertOne(donationsItems);
+      res.send(result);
+    });
+
+    // 
+    app.get("/myDonations", async (req, res) => {
+      const cursor = myDonationsCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+    // delete
+    app.delete("/myDonations/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await myDonationsCollection.deleteOne(query);
+      res.send(result);
+    });
+
 
     // carts collection 2nd step
     app.get("/carts", async (req, res) => {
@@ -238,6 +261,21 @@ async function run() {
       const result = await cartCollection.insertOne(cartItems);
       res.send(result);
     });
+
+    //  stats or analytics
+    app.get('/admin-stats', async(req, res) => {
+      const users = await userCollection.estimatedDocumentCount();
+      const allPets = await petsCollection.estimatedDocumentCount();
+      const donations = await donationsCollection.estimatedDocumentCount();
+
+      // 
+      res.send({
+        users,
+        allPets,
+        donations
+      })
+    })
+ 
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
