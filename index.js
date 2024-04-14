@@ -9,7 +9,12 @@ const port = process.env.PORT || 5000;
 //middleware
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
+    origin: [
+      "http://localhost:5173",
+      "https://pet-adoptionss.surge.sh",
+      // "https://pet-adoption-3aec5.firebaseapp.com",  
+           
+    ],
     credentials: true,
   })
 );
@@ -32,7 +37,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
     const petsCollection = client.db("petsAdoption").collection("allPets");
     const donationsCollection = client
@@ -147,10 +152,14 @@ async function run() {
     // console.log(result)
 
     // All data
-    app.get("/allPets", async (req, res) => {
-      const cursor = petsCollection.find();
-      const result = await cursor.toArray();
-      res.send(result);
+    app.get("/allPets", async (req, res) => {    
+      const search = req.query.search;    
+      const query = {};
+      if (search) {
+        query.petName = { $regex: search, $options: "i" };
+      }    
+      const result = await petsCollection.find(query).toArray();
+      res.send(result)
     });
 
     // update
@@ -202,13 +211,38 @@ async function run() {
       res.send(result);
     });
 
+
     // donations
     app.get("/donations", async (req, res) => {
-      const cursor = donationsCollection.find();
+      const filter = req.query;   
+      const category = req.query.category;
+      const donationRang = req.query.donationRang;
+      // const query = {      
+      //   donatedAmount : {$gte: 60, $gt: 50},
+      //   donatedAmount : {$lte: 60, $gte: 50}
+      // };
+
+      const filterObj = {};
+
+      if (donationRang) {
+        const [min, max] = donationRang.split("-").map(Number);
+        filterObj.donatedAmount = { $gte: min, $lte: max };
+      }
+    
+      if (category) {
+        filterObj.category = category;
+      }        
+      const options = {
+        sort: {
+          donatedAmount: filter.sort === 'asc' ? 1: -1
+        }
+      };     
+      
+      const cursor = donationsCollection.find(filterObj, options);
+     
       const result = await cursor.toArray();
       res.send(result);
     });
-
 
     // id
     app.get("/donations/:id", async (req, res) => {
@@ -217,6 +251,8 @@ async function run() {
       const result = await donationsCollection.findOne(query);
       res.send(result);
     });
+
+    // 
 
     //  my donation
     app.post("/myDonations", async (req, res) => {
@@ -289,10 +325,10 @@ async function run() {
   
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
+    // await client.db("admin").command({ ping: 1 });
+    // console.log(
+    //   "Pinged your deployment. You successfully connected to MongoDB!"
+    // );
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
